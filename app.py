@@ -2,143 +2,191 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Set Streamlit page configuration
-st.set_page_config(page_title="Flood Prediction", page_icon="🌊", layout="wide")
+from utils.data_loader import load_rainfall_data
+from utils.features import add_rainfall_features, add_statistical_features
+from utils.labeling import add_flood_label
+from utils.predict import load_model, prepare_input
+from utils.explain import get_feature_importance
 
-# Add custom CSS to hide the GitHub icon specifically
-hide_github_icon_css = """
-<style>
-    /* Hide the GitHub icon */
-    .stToolbarActionButton[data-testid="stToolbarActionButton"] {
-        display: none;
-    }
-</style>
-"""
-st.markdown(hide_github_icon_css, unsafe_allow_html=True)
 
-# Load Data
-@st.cache_data
-def load_data():
-    return pd.read_csv("data/rainfall.csv")
-
-data = load_data()
-
-# Sidebar for user input
-st.sidebar.title("Flood Prediction")
-state = st.sidebar.selectbox("Select State", data['SUBDIVISION'].unique())
-month = st.sidebar.selectbox("Select Month", data.columns[2:14])  # Skip 'SUBDIVISION' and 'YEAR'
-
-# Period selection
-period = st.sidebar.radio(
-    "Select Period", ["Annual", "Jan-Feb", "Mar-May", "Jun-Sep", "Oct-Dec"]
+st.set_page_config(
+    page_title="Flood Risk Dashboard",
+    page_icon="🌊",
+    layout="wide"
 )
 
-# Define columns for each period
-period_columns = {
-    "Annual": data.iloc[:, 2:14].sum(axis=1),  # All months
-    "Jan-Feb": data.iloc[:, 2:4].sum(axis=1),  # Jan, Feb
-    "Mar-May": data.iloc[:, 4:7].sum(axis=1),  # Mar, Apr, May
-    "Jun-Sep": data.iloc[:, 7:11].sum(axis=1),  # Jun, Jul, Aug, Sep
-    "Oct-Dec": data.iloc[:, 11:14].sum(axis=1)  # Oct, Nov, Dec
-}
+# Load data & model
+@st.cache_data
+def load_data():
+    df = load_rainfall_data()
+    df = add_rainfall_features(df)
+    df = add_statistical_features(df)
+    df = add_flood_label(df)
+    return df
 
-# Add a new column for the selected period in the dataset
-data[period] = period_columns[period]
+@st.cache_resource
+def load_flood_model():
+    return load_model()
 
-# Filter data for the selected state
-state_data = data[data['SUBDIVISION'] == state]
+data = load_data()
+model = load_flood_model()
 
-# Calculate statistics for the selected month
-avg_rainfall = state_data[month].mean()
-total_rainfall = state_data[month].sum()
-max_rainfall = state_data[month].max()
-min_rainfall = state_data[month].min()
+FEATURE_NAMES = [
+    "annual_rainfall",
+    "monsoon_rainfall",
+    "pre_monsoon_rainfall",
+    "post_monsoon_rainfall",
+    "monsoon_anomaly",
+    "monsoon_percentile"
+]
 
-# Tabs for Dashboard and Charts
-tabs = st.tabs(["Home", "Rainfall Trends"])
+# Sidebar navigation
+st.sidebar.title("🌊 Flood Dashboard")
 
-# App description - Explain functionalities in an expander box
-with st.expander('About this app'):
-    st.markdown('**What can this app do?**')
-    st.info('This app provides insights into rainfall data for different states and helps to predict flood risks using historical rainfall data.')
-    st.markdown('**How to use the app?**')
-    st.warning(
-        '1. Select a state and a specific month from the sidebar to view rainfall trends.\n'
-        '2. Choose a period to analyze cumulative rainfall across the years.\n'
-        '3. Explore interactive charts for trends and averages in the Rainfall Trends tab.'
+page = st.sidebar.radio(
+    "Navigation",
+    ["🤖 Flood Risk Prediction (ML)", "📊 Rainfall Analysis"]
+)
+
+state = st.sidebar.selectbox(
+    "Select State",
+    sorted(data["SUBDIVISION"].unique())
+)
+
+# Sidebar options ONLY for analysis
+if page == "📊 Rainfall Analysis":
+    month = st.sidebar.selectbox(
+        "Select Month",
+        data.columns[2:14]
+    )
+    period = st.sidebar.radio(
+        "Select Period",
+        ["Annual", "Jan-Feb", "Mar-May", "Jun-Sep", "Oct-Dec"]
     )
 
-# Tab 1: Dashboard
-with tabs[0]:
-    st.title("Flood Prediction Dashboard")
-    st.write(f"### Average Rainfall in {state} for {month}: {avg_rainfall:.2f} mm")
-    st.write(f"Total Rainfall in {state} for {month}: {total_rainfall:.2f} mm")
-    st.write(f"Maximum Rainfall in {state} for {month}: {max_rainfall:.2f} mm")
-    st.write(f"Minimum Rainfall in {state} for {month}: {min_rainfall:.2f} mm")
+# Filter state data
+state_data = data[data["SUBDIVISION"] == state].copy()
 
-    # Prediction Model (Threshold-Based Example)
-    if avg_rainfall > 300:
-        st.error("Flood Risk: High")
-    elif avg_rainfall > 150:
-        st.warning("Flood Risk: Medium")
+# Helper for analysis period rainfall
+def compute_period_rainfall(df, period):
+    if period == "Annual":
+        return df.iloc[:, 2:14].sum(axis=1)
+    elif period == "Jan-Feb":
+        return df.iloc[:, 2:4].sum(axis=1)
+    elif period == "Mar-May":
+        return df.iloc[:, 4:7].sum(axis=1)
+    elif period == "Jun-Sep":
+        return df.iloc[:, 7:11].sum(axis=1)
+    elif period == "Oct-Dec":
+        return df.iloc[:, 11:14].sum(axis=1)
+
+
+# 🤖 PAGE 1 — ML FLOOD RISK PREDICTION
+if page == "🤖 Flood Risk Prediction (ML)":
+
+    st.title("🤖 Flood Risk Prediction")
+
+    st.info(
+        "This page predicts **seasonal / annual flood risk** using a machine "
+        "learning model trained on historical rainfall patterns."
+    )
+
+    # Use latest year automatically
+    latest_year = state_data["YEAR"].max()
+
+    col1, col2 = st.columns(2)
+    col1.metric("State", state)
+
+    # ML prediction (NO PERIOD DEPENDENCY)
+    X_input = prepare_input(state_data)
+    probability = model.predict_proba(X_input)[0][1]
+
+    st.subheader("📈 Flood Risk Probability")
+    st.metric("Flood Probability", f"{probability * 100:.1f}%")
+
+    # Risk thresholds
+    if probability > 0.55:
+        st.error("Flood Risk Level: HIGH")
+    elif probability > 0.35:
+        st.warning("Flood Risk Level: MEDIUM")
     else:
-        st.success("Flood Risk: Low")
+        st.success("Flood Risk Level: LOW")
 
-# Tab 2: Rainfall Charts
-with tabs[1]:
-    st.title("Rainfall Charts")
-    
-    # Rainfall Trends Over the Years (Interactive)
-    st.write("### Rainfall Trends Over the Years")
-    fig1 = px.line(state_data, x="YEAR", y=month, title=f"Monthly Rainfall in {state} for {month} (Over the Years)")
-    fig1.update_layout(
-        xaxis_title="Year",
-        yaxis_title="Rainfall (mm)",
-        template="plotly_dark"  # Dark theme for a cool look
+    st.caption(
+        "Prediction is based on aggregated seasonal rainfall features. "
     )
-    st.plotly_chart(fig1)
 
-    # Average Monthly Rainfall Across Years
-    st.write(f"### Monthly Average Rainfall in {state} (Across All Years)")
-    monthly_avg_rainfall = state_data.iloc[:, 2:14].mean()
+    # Explainability
+    st.subheader("🔍 Model Explainability")
+
+    importance_df = get_feature_importance(model, FEATURE_NAMES)
+    importance_df["Importance (%)"] = importance_df["Importance"] * 100
+
+    fig = px.bar(
+        importance_df,
+        x="Importance (%)",
+        y="Feature",
+        orientation="h",
+        title="Feature Importance in Flood Risk Prediction"
+    )
+    fig.update_layout(template="plotly_dark")
+    st.plotly_chart(fig, use_container_width=True)
+
+
+# 📊 PAGE 2 — RAINFALL ANALYSIS
+elif page == "📊 Rainfall Analysis":
+
+    st.title("📊 Rainfall Trends & Analysis")
+
+    st.info(
+        "This page provides **exploratory analysis** of historical rainfall data. "
+    )
+
+    # Monthly statistics
+    avg_rainfall = state_data[month].mean()
+    max_rainfall = state_data[month].max()
+    min_rainfall = state_data[month].min()
+    total_rainfall = state_data[month].sum()
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Average Rainfall", f"{avg_rainfall:.2f} mm")
+    col2.metric("Maximum Rainfall", f"{max_rainfall:.2f} mm")
+    col3.metric("Minimum Rainfall", f"{min_rainfall:.2f} mm")
+    col4.metric("Total Rainfall", f"{total_rainfall:.2f} mm")
+
+    # Monthly trend
+    fig1 = px.line(
+        state_data,
+        x="YEAR",
+        y=month,
+        title=f"{month} Rainfall Trend in {state}"
+    )
+    fig1.update_layout(template="plotly_dark")
+    st.plotly_chart(fig1, use_container_width=True)
+
+    # Monthly averages
+    monthly_avg = state_data.iloc[:, 2:14].mean()
+
     fig2 = px.bar(
-        x=["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-        y=monthly_avg_rainfall,
-        labels={"x": "Month", "y": "Rainfall (mm)"},
-        title=f"Monthly Average Rainfall in {state} (Across All Years)",
-        color=monthly_avg_rainfall,  # Color the bars based on the rainfall values
-        color_continuous_scale="Blues"  # Set the color scale to a nice blue gradient
+        x=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+        y=monthly_avg,
+        title=f"Average Monthly Rainfall in {state}",
+        color=monthly_avg,
+        color_continuous_scale="Blues"
     )
-    fig2.update_layout(
-        xaxis_title="Month",
-        yaxis_title="Rainfall (mm)",
-        template="plotly_dark",  # Dark theme for a cool look
-        xaxis_tickmode="array",  # Show month names
-        xaxis_tickvals=list(range(12)),  # Month indices
-        xaxis_ticktext=["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-        coloraxis_showscale=False  # Hide color scale legend
-    )
-    st.plotly_chart(fig2)
+    fig2.update_layout(template="plotly_dark", coloraxis_showscale=False)
+    st.plotly_chart(fig2, use_container_width=True)
 
-    # Cumulative Rainfall for Selected Period Chart
-    st.write("### Cumulative Rainfall Over the Years for Selected Period")
+    # Period rainfall trend
+    state_data["period_rainfall"] = compute_period_rainfall(state_data, period)
+
     fig3 = px.bar(
         state_data,
         x="YEAR",
-        y=period,
-        title=f"Cumulative Rainfall in {state} for {period} Over the Years",
-        labels={"x": "Year", "y": "Rainfall (mm)"},
-        color=state_data[period],
+        y="period_rainfall",
+        title=f"{period} Cumulative Rainfall Over Years",
+        color="period_rainfall",
         color_continuous_scale="Viridis"
     )
-    fig3.update_layout(
-        xaxis_title="Year",
-        yaxis_title="Cumulative Rainfall (mm)",
-        template="plotly_dark"  # Dark theme
-    )
-    st.plotly_chart(fig3)
-    
-    # Cumulative Rainfall for Selected Period
-    rainfall_period = state_data[period].sum()
-    st.write(f"### Cumulative Rainfall for {period}: {rainfall_period:.2f} mm")
-
+    fig3.update_layout(template="plotly_dark")
+    st.plotly_chart(fig3, use_container_width=True)
