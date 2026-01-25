@@ -50,5 +50,5 @@ print("Accuracy:", accuracy_score(y_test, y_pred))
 print("\nClassification Report:\n", classification_report(y_test, y_pred))
 
 # Save model
-joblib.dump(model, "flood_risk_model.pkl")
+joblib.dump(model, "models/flood_risk_model.pkl")
 print("Model saved as flood_risk_model.pkl")
