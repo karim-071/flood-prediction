@@ -38,7 +38,8 @@ model = RandomForestClassifier(
     n_estimators=300,
     max_depth=6,
     random_state=42,
-    class_weight="balanced"
+    class_weight="balanced",
+    n_jobs=1  # Use single thread for better pickle compatibility
 )
 
 model.fit(X_train, y_train)
@@ -50,5 +51,5 @@ print("Accuracy:", accuracy_score(y_test, y_pred))
 print("\nClassification Report:\n", classification_report(y_test, y_pred))
 
 # Save model
-joblib.dump(model, "models/flood_risk_model.pkl")
-print("Model saved as flood_risk_model.pkl")
+joblib.dump(model, "models/flood_risk_model.pkl", protocol=5)
+print("✓ Model saved as flood_risk_model.pkl")
