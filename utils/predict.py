@@ -1,10 +1,25 @@
 import joblib
 import pandas as pd
+import os
+from pathlib import Path
 
-MODEL_PATH = "models/flood_risk_model.pkl"
+# Use absolute path relative to this file
+CURRENT_DIR = Path(__file__).parent.parent
+MODEL_PATH = CURRENT_DIR / "models" / "flood_risk_model.pkl"
 
 def load_model():
-    return joblib.load(MODEL_PATH)
+    """Load the trained flood risk model."""
+    try:
+        return joblib.load(MODEL_PATH)
+    except FileNotFoundError:
+        raise FileNotFoundError(
+            f"Model file not found at {MODEL_PATH}. "
+            f"Current working directory: {os.getcwd()}"
+        )
+    except Exception as e:
+        raise RuntimeError(
+            f"Error loading model from {MODEL_PATH}: {str(e)}"
+        )
 
 def prepare_input(state_data):
     latest = state_data.sort_values("YEAR").iloc[-1]
