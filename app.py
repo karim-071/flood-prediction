@@ -45,7 +45,7 @@ st.sidebar.title("🌊 Flood Dashboard")
 
 page = st.sidebar.radio(
     "Navigation",
-    ["🤖 Flood Risk Prediction (ML)", "📊 Rainfall Analysis"]
+    ["Flood Risk Prediction (ML)", "Rainfall Analysis"]
 )
 
 state = st.sidebar.selectbox(
@@ -190,3 +190,4 @@ elif page == "📊 Rainfall Analysis":
     )
     fig3.update_layout(template="plotly_dark")
     st.plotly_chart(fig3, use_container_width=True)
+
