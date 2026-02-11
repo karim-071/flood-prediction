@@ -54,7 +54,7 @@ state = st.sidebar.selectbox(
 )
 
 # Sidebar options ONLY for analysis
-if page == "📊 Rainfall Analysis":
+if page == "Rainfall Analysis":
     month = st.sidebar.selectbox(
         "Select Month",
         data.columns[2:14]
@@ -82,7 +82,7 @@ def compute_period_rainfall(df, period):
 
 
 # 🤖 PAGE 1 — ML FLOOD RISK PREDICTION
-if page == "🤖 Flood Risk Prediction (ML)":
+if page == "Flood Risk Prediction (ML)":
 
     st.title("🤖 Flood Risk Prediction")
 
@@ -134,7 +134,7 @@ if page == "🤖 Flood Risk Prediction (ML)":
 
 
 # 📊 PAGE 2 — RAINFALL ANALYSIS
-elif page == "📊 Rainfall Analysis":
+elif page == "Rainfall Analysis":
 
     st.title("📊 Rainfall Trends & Analysis")
 
@@ -190,4 +190,5 @@ elif page == "📊 Rainfall Analysis":
     )
     fig3.update_layout(template="plotly_dark")
     st.plotly_chart(fig3, use_container_width=True)
+
 
