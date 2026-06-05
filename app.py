@@ -84,7 +84,7 @@ def compute_period_rainfall(df, period):
 # 🤖 PAGE 1 — ML FLOOD RISK PREDICTION
 if page == "Flood Risk Prediction (ML)":
 
-    st.title("🤖 Flood Risk Prediction")
+    st.title("Flood Risk Prediction")
 
     st.info(
         "This page predicts **seasonal / annual flood risk** using a machine "
