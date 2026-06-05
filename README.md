@@ -1,6 +1,12 @@
 # Flood Prediction App 🌊
 
-An interactive **Streamlit web application** for historical flood risk assessment and rainfall analysis across Indian states using **machine learning** and **data visualization**.
+![Python](https://img.shields.io/badge/Python-3.10-blue)
+![Scikit-learn](https://img.shields.io/badge/Scikit--learn-Machine%20Learning-orange)
+![Streamlit](https://img.shields.io/badge/Streamlit-Web%20App-red)
+![Plotly](https://img.shields.io/badge/Plotly-Data%20Visualization-purple)
+![License](https://img.shields.io/badge/License-MIT-green)
+
+> An interactive **Streamlit web application** for historical flood risk assessment and rainfall analysis across Indian states using **machine learning** and **data visualization**.
 
 ## Description
 
