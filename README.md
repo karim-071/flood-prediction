@@ -23,6 +23,9 @@ The app is organized into two main sections:
 - **Flood Risk Prediction**: Probability-based flood risk classificatio
 - **Period Analysis**: Analyze rainfall for different periods like Jan-Feb, Mar-May, Jun-Sep, and Oct-Dec.
 
+## 🌐 Live Demo
+Try the app here: https://your-app-link.com
+
 ### 🤖 Flood Risk Prediction (Machine Learning)
 - Uses a **Random Forest Classifier** trained on historical rainfall data
 - Evaluates flood risk based on **seasonal and annual rainfall patterns**
