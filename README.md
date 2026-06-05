@@ -24,7 +24,7 @@ The app is organized into two main sections:
 - **Period Analysis**: Analyze rainfall for different periods like Jan-Feb, Mar-May, Jun-Sep, and Oct-Dec.
 
 ## 🌐 Live Demo
-Try the app here: https://your-app-link.com
+Try the app here: (https://flood-predictor.streamlit.app/)
 
 ### 🤖 Flood Risk Prediction (Machine Learning)
 - Uses a **Random Forest Classifier** trained on historical rainfall data
