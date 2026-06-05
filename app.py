@@ -116,21 +116,21 @@ if page == "Flood Risk Prediction (ML)":
         "Prediction is based on aggregated seasonal rainfall features. "
     )
 
-    # Explainability
-    st.subheader("🔍 Model Explainability")
+    # # Explainability
+    # st.subheader("🔍 Model Explainability")
 
-    importance_df = get_feature_importance(model, FEATURE_NAMES)
-    importance_df["Importance (%)"] = importance_df["Importance"] * 100
+    # importance_df = get_feature_importance(model, FEATURE_NAMES)
+    # importance_df["Importance (%)"] = importance_df["Importance"] * 100
 
-    fig = px.bar(
-        importance_df,
-        x="Importance (%)",
-        y="Feature",
-        orientation="h",
-        title="Feature Importance in Flood Risk Prediction"
-    )
-    fig.update_layout(template="plotly_dark")
-    st.plotly_chart(fig, use_container_width=True)
+    # fig = px.bar(
+    #     importance_df,
+    #     x="Importance (%)",
+    #     y="Feature",
+    #     orientation="h",
+    #     title="Feature Importance in Flood Risk Prediction"
+    # )
+    # fig.update_layout(template="plotly_dark")
+    # st.plotly_chart(fig, use_container_width=True)
 
 
 # 📊 PAGE 2 — RAINFALL ANALYSIS
