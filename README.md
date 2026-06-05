@@ -55,7 +55,21 @@ The app is organized into two main sections:
 - **Scikit-learn** – Machine learning  
 - **Pandas** – Data processing and analysis  
 - **Plotly** – Interactive visualizations  
-- **Joblib** – Model persistence 
+- **Joblib** – Model persistence
+
+## 🔮 Future Improvements
+
+- Integrate real-time rainfall APIs
+- Experiment with LSTM/Time-Series models
+- Add district-level granularity
+- Deploy with CI/CD pipeline
+- Improve explainability with SHAP values
+
+## 🙌 Acknowledgements
+
+- **Streamlit** – Interactive web app development  
+- **Plotly** – Data visualization  
+- **Pandas & Scikit-learn** – Data science and machine learning tools
 
 ## 📌 Disclaimer
 
@@ -64,8 +78,4 @@ It does **not** provide real-time flood forecasting or official disaster warning
 
 ---
 
-## 🙌 Acknowledgements
 
-- **Streamlit** – Interactive web app development  
-- **Plotly** – Data visualization  
-- **Pandas & Scikit-learn** – Data science and machine learning tools  
